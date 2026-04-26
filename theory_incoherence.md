@@ -25,12 +25,12 @@ If we multiply this vector by a randomly generated orthogonal matrix, we are ess
 
 Instead of pointing purely along the Z-axis, it might now point diagonally, distributing its length across all three axes. The new coordinates might look like $[57.7, 57.7, 57.7]$.
 
-### The Smearing Effect
+## The Smearing Effect
 This is the core of TurboQuant. By multiplying every Key and Value vector by a fixed random orthogonal matrix before quantization, we take any massive outliers and "smear" their energy across all the dimensions.
 
 Mathematically, this rotation forces the vector's coordinates to approximate a Gaussian (normal) distribution. 
 
-### Why is Gaussian Better?
+## Why is Gaussian Better?
 Once the data resembles a Gaussian distribution, extreme outliers are gone. The minimum and maximum values of the vector are pulled much closer to the average. 
 When we apply Uniform Quantization (or Lloyd-Max quantization, which is optimized for Gaussian data) to this rotated vector, the step size between buckets becomes very small. The quantization grid tightly bounds the data, resulting in dramatically less rounding error.
 
