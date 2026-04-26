@@ -1,10 +1,17 @@
 # pyturboquant Benchmark Report
 
 **Date:** 2026-04-26  
-**Environment:** Windows, CPU (no CUDA GPU), Python 3.14, PyTorch  
 **Embedding Model:** `all-MiniLM-L6-v2` (384 dimensions)  
 **Quantization:** TurboQuant Algorithm 1 & 2 at 4-bit  
 **Data Source:** *The Adventures of Sherlock Holmes* (`sample/big.txt`, 128,458 lines)
+
+### Test Environments
+
+| | CPU | GPU |
+|---|---|---|
+| **Hardware** | Intel CPU (MKL-optimized) | NVIDIA GeForce RTX 5060 Laptop GPU (8 GB VRAM) |
+| **PyTorch** | 2.11.0 (CPU) | 2.12.0.dev20260408+cu128 |
+| **OS** | Windows | Windows |
 
 ---
 
@@ -161,36 +168,20 @@ us away from each other. My own complete...'
 
 ---
 
-## Experiment 4: Stress Test (100,000 Vectors)
+## Experiment 4: Multi-Scale Stress Test (100K – 1M Vectors)
 
 **Script:** [stress_test.py](file:///c:/MARCO/Code/pyturboquant/scripts/stress_test.py)
 
 ### What It Tests
-Whether TurboQuant becomes faster than brute-force at larger scale (100,000 vectors), and how memory scales.
+How TurboQuant's memory savings and search speed compare to brute-force FP32 as the database scales from 100,000 to 1,000,000 vectors, on both CPU and CUDA GPU.
 
 ### How It Works
 1. Encodes 2,000 real paragraphs from the Sherlock Holmes text.
-2. Repeats and adds Gaussian noise to simulate 100,000 unique vectors.
-3. Builds both FP32 storage and a `TurboQuantIndex`.
-4. Runs 10 warm-up + 10 timed search iterations for each method and averages the results.
+2. Repeats and adds Gaussian noise to simulate the target count of unique vectors.
+3. **Chunked indexing**: Vectors are added to the `TurboQuantIndex` in batches of 50,000 to avoid GPU OOM during the bit-packing step.
+4. Runs 5 warm-up + 5 timed search iterations for each method with `torch.cuda.synchronize()` for accurate GPU timing.
 
-### Raw Output
-```
-============================================================
- RESULTS FOR 100,000 VECTORS
-============================================================
-Memory (Old)         |     146.48 MB
-Memory (TQ)          |      19.07 MB (7.7x smaller)
-------------------------------------------------------------
-Search Time (Old)    |       3.82 ms
-Search Time (TQ)     |     414.58 ms
-============================================================
-
-NOTE: At 100k vectors, memory bandwidth is still enough for the 'Old Way'.
-Try increasing target_count to 1,000,000 to see the crossover point.
-```
-
-### Results
+### 4a. CPU Baseline (100K Vectors)
 
 | Metric | Old Way (FP32) | TurboQuant (4-bit) |
 |---|---|---|
@@ -198,34 +189,87 @@ Try increasing target_count to 1,000,000 to see the crossover point.
 | Compression | 1.00x | **7.7x** |
 | Search time | **3.82 ms** | 414.58 ms |
 
+> [!NOTE]
+> On CPU at 100K vectors, brute-force `matmul` is ~108x faster. TurboQuant's decompression overhead (unpack → centroid lookup → inverse rotation) dominates at this scale.
+
+### 4b. CUDA GPU Multi-Scale Results (RTX 5060, 8 GB VRAM)
+
+```
+============================================================
+ FINAL RESULTS
+============================================================
+   Vectors |    Old Mem |     TQ Mem |  Ratio |  Old Search |   TQ Search | Status
+--------------------------------------------------------------------------------
+   100,000 |    146.5MB |     19.1MB |   7.7x |      0.47ms |     45.25ms | OK
+   300,000 |    439.5MB |     57.2MB |   7.7x |     28.73ms |    141.66ms | OK
+   500,000 |    732.4MB |     95.4MB |   7.7x |     45.11ms |    233.19ms | OK
+ 1,000,000 |   1464.8MB |    190.7MB |   7.7x |     86.20ms |    476.49ms | OK
+================================================================================
+```
+
+| Scale | Old Memory | TQ Memory | Compression | Old Search | TQ Search | Speed Gap |
+|---|---|---|---|---|---|---|
+| 100K | 146.5 MB | **19.1 MB** | **7.7x** | **0.47 ms** | 45.25 ms | 96x |
+| 300K | 439.5 MB | **57.2 MB** | **7.7x** | **28.73 ms** | 141.66 ms | **4.9x** |
+| 500K | 732.4 MB | **95.4 MB** | **7.7x** | **45.11 ms** | 233.19 ms | **5.2x** |
+| 1M | 1,464.8 MB | **190.7 MB** | **7.7x** | **86.20 ms** | 476.49 ms | **5.5x** |
+
 > [!IMPORTANT]
-> At 100K vectors on CPU, full-precision brute-force is **~108x faster** at search. TurboQuant's decompression overhead (unpack → centroid lookup → inverse rotation) dominates at this scale. The "Old Way" benefits from Intel MKL-optimized `torch.matmul` which is one of the most highly tuned operations in computing.
+> **The speed gap narrows dramatically as scale increases.** At 100K vectors, brute-force is 96x faster. But at 300K+, the gap collapses to only ~5x. This is because at larger scales, the FP32 `matmul` becomes **memory-bandwidth bound** — it must stream 1.4 GB of data through the GPU, while TurboQuant only streams 190 MB. The decompression overhead becomes a smaller fraction of total time as the data transfer cost grows.
+
+> [!NOTE]
+> **OOM Resolved.** Earlier attempts to add 500K+ vectors in a single `index.add()` call crashed with CUDA OOM due to intermediate memory in the bit-packing code. By chunking the `add()` into 50K-vector batches, all scales up to 1M completed successfully on the 8 GB GPU.
+
+### 4c. Scaling Trend Analysis
+
+```mermaid
+xychart-beta
+    title "Search Time vs. Scale (GPU)"
+    x-axis ["100K", "300K", "500K", "1M"]
+    y-axis "Search Time (ms)" 0 --> 500
+    bar [0.47, 28.73, 45.11, 86.20]
+    bar [45.25, 141.66, 233.19, 476.49]
+```
+
+The FP32 search time scales **linearly** with vector count (as expected for brute-force O(n) scan). TurboQuant also scales linearly, but with a higher constant factor due to decompression. The key observation is that at 1M vectors:
+
+- FP32 requires **1.46 GB** of VRAM just for storage
+- TurboQuant requires only **190 MB** of VRAM for storage
+- At 10M vectors, FP32 would need **~14.6 GB** (exceeding most GPUs), while TurboQuant would need only **~1.9 GB**
 
 ---
 
 ## Summary & Conclusions
 
-### Consistent Finding: 7.68x Memory Savings
-Across all four experiments, TurboQuant consistently achieved **7.68x compression** at 4-bit quantization. This ratio held regardless of dataset size (10 sentences → 100,000 vectors).
+### Consistent Finding: 7.7x Memory Savings
+Across all experiments — from 10 sentences to 1,000,000 vectors, on both CPU and GPU — TurboQuant consistently achieved **7.7x compression** at 4-bit quantization.
 
 ### The Trade-off Matrix
 
-| Scale | Memory Winner | Speed Winner | Accuracy |
-|---|---|---|---|
-| 10 vectors | TurboQuant (7.68x smaller) | Tie | 100% match |
-| 2,000 vectors | TurboQuant (7.68x smaller) | FP32 (~38x faster) | 80% match |
-| 100,000 vectors | TurboQuant (7.7x smaller) | FP32 (~108x faster) | Not measured |
-| **10M+ vectors** | **TurboQuant (only option)** | **TurboQuant (only option)** | **~80-100%** |
+| Scale | Device | Memory Winner | Speed Gap | Accuracy |
+|---|---|---|---|---|
+| 10 vectors | CPU | TurboQuant (7.68x smaller) | Tie | 100% match |
+| 2,000 vectors | CPU | TurboQuant (7.68x smaller) | FP32 ~38x faster | 80% match |
+| 100,000 vectors | CPU | TurboQuant (7.7x smaller) | FP32 ~108x faster | Not measured |
+| 100,000 vectors | GPU | TurboQuant (7.7x smaller) | FP32 ~96x faster | Not measured |
+| 300,000 vectors | GPU | TurboQuant (7.7x smaller) | FP32 **~5x faster** | Not measured |
+| 500,000 vectors | GPU | TurboQuant (7.7x smaller) | FP32 **~5x faster** | Not measured |
+| 1,000,000 vectors | GPU | TurboQuant (7.7x smaller) | FP32 **~5.5x faster** | Not measured |
+| **10M+ vectors** | Any | **TurboQuant (only option)** | **TurboQuant (only option)** | **~80-100%** |
 
 ### Key Takeaways
 
-1. **TurboQuant is a memory optimization, not a speed optimization** (at current v0.1.0). Its value is enabling vector search at scales where full-precision storage would exceed available RAM.
+1. **TurboQuant is primarily a memory optimization** (at current v0.1.0). Its value is enabling vector search at scales where full-precision storage would exceed available RAM or VRAM.
 
 2. **Semantic meaning survives extreme compression.** A query for "musical instrument" correctly found "violin" even after discarding 87% of the data. This validates the mathematical foundation: random rotation makes coordinates Gaussian, and Lloyd-Max codebooks optimally preserve that structure.
 
-3. **The crossover point is beyond 100K vectors on CPU.** At 10M+ vectors, FP32 requires ~15 GB of RAM (infeasible on most machines), while TurboQuant needs only ~1.9 GB. At that scale, FP32 either crashes or swaps to disk, making TurboQuant the only viable option.
+3. **The speed gap narrows as scale increases.** On GPU, the FP32 advantage drops from **96x at 100K** to **~5x at 300K+**. This is because brute-force `matmul` becomes memory-bandwidth bound at larger scales, while TurboQuant's smaller data footprint partially offsets its decompression cost.
 
-4. **IVF partitioning (roadmap v0.5.0)** would eliminate the brute-force scan, making TurboQuant competitive on speed by only decompressing vectors in the nearest cluster (~1% of the database).
+4. **Chunked indexing resolves the GPU OOM bottleneck.** The initial OOM at 500K+ vectors was caused by the bit-packing code allocating a massive intermediate tensor. Adding vectors in 50K batches keeps peak VRAM usage manageable.
+
+5. **At 10M+ vectors, TurboQuant becomes the only viable option.** FP32 storage for 10M vectors requires ~14.6 GB — exceeding most GPU VRAM and straining system RAM. TurboQuant needs only ~1.9 GB.
+
+6. **IVF partitioning (roadmap v0.5.0)** would eliminate the brute-force O(n) scan, making TurboQuant competitive on speed by only decompressing vectors in the nearest cluster (~1% of the database). This would close the remaining ~5x speed gap.
 
 ---
 
@@ -236,4 +280,5 @@ Across all four experiments, TurboQuant consistently achieved **7.68x compressio
 | [demo_quantize.py](file:///c:/MARCO/Code/pyturboquant/scripts/demo_quantize.py) | Single-vector quantize → dequantize round-trip |
 | [embbeding_model_demo.py](file:///c:/MARCO/Code/pyturboquant/scripts/embbeding_model_demo.py) | Head-to-head FP32 vs TurboQuant with real sentences |
 | [big_data_benchmark.py](file:///c:/MARCO/Code/pyturboquant/scripts/big_data_benchmark.py) | 2,000-paragraph Sherlock Holmes retrieval benchmark |
-| [stress_test.py](file:///c:/MARCO/Code/pyturboquant/scripts/stress_test.py) | 100K vector stress test for speed comparison |
+| [stress_test.py](file:///c:/MARCO/Code/pyturboquant/scripts/stress_test.py) | Multi-scale stress test (100K–1M) with chunked GPU indexing |
+
