@@ -100,14 +100,14 @@ This architectural decoupling provides massive advantages for data engineering:
 * **Asymmetric Storage Economics:** You get the pristine intelligence of a full-precision model, but the resulting vector is instantly compressed via random rotation and 4-bit quantization before it hits the disk. This allows massive, enterprise-scale datasets to fit entirely within cheap consumer RAM.
 * **Hardware Flexibility:** You do not need specialized execution engines or custom CUDA kernels to run the embedding model. Any standard server can generate the FP32 vectors, which are then compressed purely for storage and retrieval efficiency.
 
-To bridge the gap between theoretical math and actual implementation, we used [`pyturboquant`](https://github.com/jorgebmann/pyturboquant), an experimental Python vector index, and stress-tested it. From our experience building this system, we observed what we'd call the "Naive vs. Optimized" engineering reality of vector compression.
+To bridge the gap between theoretical math and actual implementation, we used [`pyturboquant`](https://github.com/jorgebmann/pyturboquant), an experimental Python vector index, and stress-tested it. From our experience analyzing this system, we observed what we'd call the "Naive vs. Optimized" engineering reality of vector compression.
 
 > 📊 The full results and charts from our benchmarking runs are documented in the [Benchmarking pyturboquant](benchmarks.md) companion piece.
 
 ### Phase 1: Solving the Memory Crisis (v0.1.0)
-In our initial implementation, we focused purely on the memory bottleneck. We generated 100,000 vector embeddings (using `all-MiniLM-L6-v2` at 384 dimensions) and recorded the following results.
+In our initial tests, we focused purely on the memory bottleneck. We generated 100,000 vector embeddings (using `all-MiniLM-L6-v2` at 384 dimensions) and recorded the following results.
 
-We stored these in two formats: a standard FP32 PyTorch tensor, and our 4-bit `TurboQuantIndex`.
+We stored these in two formats: a standard FP32 PyTorch tensor, and the 4-bit `TurboQuantIndex`.
 
 **The Results:**
 * **Memory (FP32):** 146.48 MB
