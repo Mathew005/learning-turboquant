@@ -1,8 +1,8 @@
-# Benchmarking pyturboquant
+# Benchmarking [pyturboquant](https://github.com/jorgebmann/pyturboquant)
 
 *A companion piece to [Understanding TurboQuant](README.md)*
 
-To ground the theory in practice, we built `pyturboquant` — an experimental Python vector index that implements TurboQuant's core algorithm: random orthogonal rotation followed by Lloyd-Max 4-bit quantization. This document records the full results of our benchmarking sessions across four progressively demanding experiments.
+To ground the theory in practice, we used [`pyturboquant`](https://github.com/jorgebmann/pyturboquant) — an experimental Python vector index that implements TurboQuant's core algorithm: random orthogonal rotation followed by Lloyd-Max 4-bit quantization. This document records the full results of our benchmarking sessions across four progressively demanding experiments.
 
 **Embedding model:** `all-MiniLM-L6-v2` (384 dimensions)
 **Quantization:** 4-bit, TurboQuant Algorithm 1 & 2
@@ -247,4 +247,4 @@ Across all experiments — from 10 sentences to 1,000,000 vectors, on both CPU a
 
 5. **At 10M+ vectors, TurboQuant becomes the only viable option.** FP32 storage requires ~14.6 GB — exceeding most GPU VRAM budgets — while TurboQuant needs only ~1.9 GB.
 
-6. **The remaining speed gap is an architectural problem, not an algorithmic one.** An Inverted File Index (IVF) partition layer would eliminate the brute-force O(n) scan, reducing each query to decompressing ~1% of the database. This is the natural next step for `pyturboquant`.
+6. **The remaining speed gap is an architectural problem, not an algorithmic one.** An Inverted File Index (IVF) partition layer would eliminate the brute-force O(n) scan, reducing each query to decompressing ~1% of the database. This is the natural next step for [`pyturboquant`](https://github.com/jorgebmann/pyturboquant).

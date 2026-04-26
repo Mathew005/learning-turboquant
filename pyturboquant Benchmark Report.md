@@ -1,4 +1,4 @@
-# pyturboquant Benchmark Report
+# [pyturboquant](https://github.com/jorgebmann/pyturboquant) Benchmark Report
 
 **Date:** 2026-04-26  
 **Embedding Model:** `all-MiniLM-L6-v2` (384 dimensions)  
@@ -17,7 +17,7 @@
 
 ## Objective
 
-Evaluate the **pyturboquant** library across four progressively complex experiments to understand:
+Evaluate the [**pyturboquant**](https://github.com/jorgebmann/pyturboquant) library across four progressively complex experiments to understand:
 
 1. **Compression quality** — How much data is lost when a vector is quantized to 4 bits?
 2. **Semantic preservation** — Can the compressed index still find the correct answer?

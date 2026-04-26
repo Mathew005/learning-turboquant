@@ -100,7 +100,7 @@ This architectural decoupling provides massive advantages for data engineering:
 * **Asymmetric Storage Economics:** You get the pristine intelligence of a full-precision model, but the resulting vector is instantly compressed via random rotation and 4-bit quantization before it hits the disk. This allows massive, enterprise-scale datasets to fit entirely within cheap consumer RAM.
 * **Hardware Flexibility:** You do not need specialized execution engines or custom CUDA kernels to run the embedding model. Any standard server can generate the FP32 vectors, which are then compressed purely for storage and retrieval efficiency.
 
-To bridge the gap between theoretical math and actual implementation, we built `pyturboquant`, an experimental Python vector index, and stress-tested it. From our experience building this system, we observed what we'd call the "Naive vs. Optimized" engineering reality of vector compression.
+To bridge the gap between theoretical math and actual implementation, we used [`pyturboquant`](https://github.com/jorgebmann/pyturboquant), an experimental Python vector index, and stress-tested it. From our experience building this system, we observed what we'd call the "Naive vs. Optimized" engineering reality of vector compression.
 
 > 📊 The full results and charts from our benchmarking runs are documented in the [Benchmarking pyturboquant](benchmarks.md) companion piece.
 
@@ -136,7 +136,7 @@ Production-grade vector databases do not decompress everything. To make TurboQua
 
 There are two primary architectural solutions to this:
 
-1. **Inverted File Index (IVF):** This is the immediate roadmap for `pyturboquant` (v0.5.0). Before search occurs, the database partitions the millions of vectors into clusters. During retrieval, the system performs a **Coarse Search**: it quickly compares the query against the centroids of these clusters (taking milliseconds). Once the closest cluster is found, it performs a **Fine Search**: it decompresses *only* the vectors inside that specific cluster (roughly 1% of the database) to find the exact winner.
+1. **Inverted File Index (IVF):** This is the immediate roadmap for [`pyturboquant`](https://github.com/jorgebmann/pyturboquant) (v0.5.0). Before search occurs, the database partitions the millions of vectors into clusters. During retrieval, the system performs a **Coarse Search**: it quickly compares the query against the centroids of these clusters (taking milliseconds). Once the closest cluster is found, it performs a **Fine Search**: it decompresses *only* the vectors inside that specific cluster (roughly 1% of the database) to find the exact winner.
 2. **Asymmetric Distance Computation (ADC):** Alternatively, systems like FAISS pre-calculate the distance between the uncompressed Query and *every possible quantization bin*, storing the results in a tiny CPU-cache Lookup Table (LUT). The system then uses the compressed bytes simply as addresses for the LUT, approximating the distance without ever decompressing the database.
 
 By combining extreme 4-bit memory compression with intelligent IVF clustering, systems can achieve the holy grail of data engineering: fitting billion-scale datasets onto consumer hardware while maintaining millisecond retrieval latency.
