@@ -234,7 +234,7 @@ body {
 /* H3 — sub-sections */
 #content h3 {
   font-family: var(--font-sans);
-  font-size: 0.78rem;
+  font-size: 1.05rem;
   font-weight: 600;
   color: var(--text-sec);
   margin-top: 2em;
