@@ -46,4 +46,4 @@ Because $S$ only contains $+1$ and $-1$, computing $Q \cdot S$ **requires no mul
 
 This bitwise logic executes at blistering speed on modern GPUs. We get the accuracy recovery of an FP16 error-correction pass, executed using the latency profile of an integer addition.
 
-![TurboQuant Hardware Architecture](assets/Turbo_quant_architecture_in_attention_mechanism.png)
+![TurboQuant Hardware Architecture](assets/2_Turbo_quant_architecture_in_attention_mechanism.png)
