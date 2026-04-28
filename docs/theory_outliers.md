@@ -1,6 +1,6 @@
 # Deep Dive: Activation Outliers in LLMs
 
-*A supplementary guide for [Understanding TurboQuant](README.md)*
+*A supplementary guide for [Understanding TurboQuant](article.md)*
 
 When compressing Large Language Models, the most significant mathematical hurdle is not the average size of the numbers, but their distribution. Specifically, we must contend with **Activation Outliers**.
 

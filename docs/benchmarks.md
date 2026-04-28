@@ -1,6 +1,6 @@
 # Benchmarking [pyturboquant](https://github.com/jorgebmann/pyturboquant)
 
-*A companion piece to [Understanding TurboQuant](README.md)*
+*A companion piece to [Understanding TurboQuant](article.md)*
 
 To ground the theory in practice, we used [`pyturboquant`](https://github.com/jorgebmann/pyturboquant) — an experimental Python vector index that implements TurboQuant's core algorithm: random orthogonal rotation followed by Lloyd-Max 4-bit quantization. This document records the full results of our benchmarking sessions across four progressively demanding experiments.
 

@@ -1,8 +1,9 @@
 /* ── Config ─────────────────────────────────────────────── */
-const HOME = 'README.md';
+const BASE_PATH = 'docs/';
+const HOME = 'article.md';
 
 const PAGES = {
-  'README.md':             'Understanding TurboQuant',
+  'article.md':           'Understanding TurboQuant',
   'theory_outliers.md':    'Deep Dive: Activation Outliers',
   'theory_incoherence.md': 'Deep Dive: Random Rotation',
   'theory_qjl.md':         'Deep Dive: QJL Correction',
@@ -11,7 +12,7 @@ const PAGES = {
 
 // Display order in the sidebar "In This Series" section
 const PAGE_ORDER = [
-  'README.md',
+  'article.md',
   'theory_outliers.md',
   'theory_incoherence.md',
   'theory_qjl.md',
@@ -163,7 +164,7 @@ async function loadPage(file) {
   content.classList.remove('page-enter');
 
   try {
-    const res = await fetch(file);
+    const res = await fetch(BASE_PATH + file);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     let md = await res.text();
 

@@ -1,6 +1,6 @@
 # Deep Dive: The Mathematics of Random Rotation
 
-*A supplementary guide for [Understanding TurboQuant](README.md)*
+*A supplementary guide for [Understanding TurboQuant](article.md)*
 
 When dealing with Activation Outliers in transformer models, we need a way to mathematically reshape a vector's distribution without altering its fundamental meaning. The solution lies in the **Principle of Incoherence**, achieved via random rotation.
 

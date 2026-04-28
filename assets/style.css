@@ -224,7 +224,7 @@ body {
    HERO PARALLAX SECTION
    ══════════════════════════════════════════════════════════════ */
 
-body[data-page="README.md"] #content .hero-container {
+body[data-page="article.md"] #content .hero-container {
   height: calc(100vh - var(--topbar-h));
   margin-top: calc(-1 * clamp(40px, 6vw, 72px));
   margin-left: calc(-1 * clamp(20px, 5vw, 48px));
@@ -232,18 +232,18 @@ body[data-page="README.md"] #content .hero-container {
   display: block;
 }
 
-body[data-page="README.md"] #content .hero-spacer {
+body[data-page="article.md"] #content .hero-spacer {
   height: 35vh;
 }
 
-body[data-page="README.md"] #content .hero-sticky {
+body[data-page="article.md"] #content .hero-sticky {
   position: sticky;
   top: calc(35vh + var(--topbar-h));
   text-align: center;
   padding: 0 clamp(20px, 5vw, 48px); /* Restore content padding inside sticky */
 }
 
-body[data-page="README.md"] #content .hero-sticky h1 {
+body[data-page="article.md"] #content .hero-sticky h1 {
   font-family: var(--font-serif);
   font-size: clamp(2.5rem, 13vw, 7.8rem);
   line-height: 1.05;
@@ -253,7 +253,7 @@ body[data-page="README.md"] #content .hero-sticky h1 {
   letter-spacing: -0.02em;
 }
 
-body[data-page="README.md"] #content .hero-sticky .authors {
+body[data-page="article.md"] #content .hero-sticky .authors {
   font-family: var(--font-sans);
   font-size: 1.25rem;
   color: var(--text-sec);
@@ -452,12 +452,12 @@ body[data-page="README.md"] #content .hero-sticky .authors {
   #content h2 { font-size: 1.2rem; }
 
   /* Adjust hero container negative margins to match mobile padding */
-  body[data-page="README.md"] #content .hero-container {
+  body[data-page="article.md"] #content .hero-container {
     margin-left: -18px;
     margin-right: -18px;
   }
   
-  body[data-page="README.md"] #content .hero-sticky {
+  body[data-page="article.md"] #content .hero-sticky {
     padding-left: 18px;
     padding-right: 18px;
   }

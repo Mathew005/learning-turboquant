@@ -1,6 +1,6 @@
 # Deep Dive: Quantized Johnson-Lindenstrauss (QJL)
 
-*A supplementary guide for [Understanding TurboQuant](README.md)*
+*A supplementary guide for [Understanding TurboQuant](article.md)*
 
 Even with random rotation smoothing out outliers, compressing a 16-bit floating point number to just 3 or 4 bits intrinsically causes some loss of precision. Over thousands of tokens, these tiny rounding errors can compound and bias the attention mechanism. 
 
